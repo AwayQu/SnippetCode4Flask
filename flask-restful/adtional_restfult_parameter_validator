@@ -1,0 +1,48 @@
+# python==3.5
+# flask==0.12
+# Flask-RESTful==0.3.5
+
+import re
+from flask_restful import reqparse
+
+class Argument(reqparse.Argument):
+    """
+        增加自定义认证
+    """
+
+    def __init__(self, name, default=None, dest=None, required=False,
+                 ignore=False, type=reqparse.text_type,
+                 location=('json', 'values',), choices=(),
+                 action='store', help=None, operators=('=',),
+                 case_sensitive=True, nullable=False, validator=None):
+        self.p_validator = validator
+        super(Argument, self).__init__(name, default=default, dest=dest,
+                                       required=required, ignore=ignore,
+                                       type=type, location=location,
+                                       choices=choices, action=action,
+                                       help=help, operators=operators,
+                                       case_sensitive=case_sensitive, nullable=nullable)
+
+    def convert(self, value, op):
+
+        value = super(Argument, self).convert(value, op)
+        if self.p_validator:
+            return self.p_validator(value)
+        else:
+            return value
+
+# usage
+
+
+def mobile_vld(v):
+    reg = r'^(13[0-9]|15[012356789]|17[678]|18[0-9]|14[57])[0-9]{8}$'
+    pattern = re.compile(reg)
+    if not pattern.match(v):
+        raise ValueError("手机号格式不符")
+    return v
+
+mobile = Argument(
+      'mobile', type=str,
+      required=True, help="参数手机号: {error_msg}",
+      nullable=False, validator=mobile_vld
+)
